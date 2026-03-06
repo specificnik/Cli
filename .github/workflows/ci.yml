@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 8 * * 6' # Weekly automated run
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Test against multiple Python versions simultaneously
+        python: ["3.11", "3.12", "3.13"]
+
+    name: "Test: Python ${{ matrix.python }}"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov ruff
+
+      - name: Run Pytest with Coverage
+        # This runs your fizzerr tests and calculates code coverage
+        run: |
+          python -m pytest --cov=fizzerr --cov-report=xml
+
+  lint:
+    name: Format and Lint (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Ruff
+        run: pip install ruff
+      - name: Check code quality
+        # This will fail the build if there are unused imports or syntax errors
+        run: ruff check .
